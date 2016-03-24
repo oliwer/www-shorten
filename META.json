@@ -88,14 +88,6 @@
          "file" : "lib/WWW/Shorten/Tinylink.pm",
          "version" : "3.093",
          "x_deprecated" : 1
-      },
-      "WWW::Shorten::UserAgent" : {
-         "file" : "lib/WWW/Shorten/UserAgent.pm",
-         "version" : "3.093"
-      },
-      "WWW::Shorten::generic" : {
-         "file" : "lib/WWW/Shorten/generic.pm",
-         "version" : "3.093"
       }
    },
    "release_status" : "stable",

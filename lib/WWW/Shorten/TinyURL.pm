@@ -1,76 +1,90 @@
 package WWW::Shorten::TinyURL;
 
-use 5.006;
+use 5.008;
 use strict;
 use warnings;
-use Carp ();
 
-use base qw( WWW::Shorten::generic Exporter );
-our $_error_message = '';
-our @EXPORT         = qw( makeashorterlink makealongerlink );
-our $VERSION        = '3.093';
-$VERSION = eval $VERSION;
+our $VERSION  = '4.00';
 
-sub makeashorterlink {
-    my $url = shift or Carp::croak('No URL passed to makeashorterlink');
-    $_error_message = '';
-    my $ua      = __PACKAGE__->ua();
-    my $tinyurl = 'http://tinyurl.com/api-create.php';
-    my $resp
-        = $ua->post($tinyurl, [url => $url, source => "PerlAPI-$VERSION",]);
-    return undef unless $resp->is_success;
-    my $content = $resp->content;
-    if ($content =~ /Error/) {
+our $APIKEY   = '';
+our $PROVIDER = 'tinyurl_com';
 
-        if ($content =~ /<html/) {
-            $_error_message = 'Error is a html page';
-        }
-        elsif (length($content) > 100) {
-            $_error_message = substr($content, 0, 100);
-        }
-        else {
-            $_error_message = $content;
-        }
-        return undef;
+
+sub shorterlink_start {
+    my ($link, $args) = @_;
+
+    # $link is guaranteed to be not empty by the caller.
+
+    # $args contains optional user-supplied arguments as
+    # well as the UserAgent signature.
+
+    if ($APIKEY) {
+        # Use TinyURL Open API
+        return {
+            method => 'POST',
+            url    => 'http://tiny-url.info/api/v1/create',
+            form   => [apikey => $APIKEY, format => 'text',
+                       provider => $PROVIDER, url => $link]
+        };
     }
-    if ($resp->content =~ m!(\Qhttp://tinyurl.com/\E\w+)!x) {
-        return $1;
+
+    # Use the TinyURL web page: it does not require an API key
+    # but is severly rate-limited.
+    return {
+        method => 'POST',
+        url    => 'http://tinyurl.com/api-create.php',
+        form   => [url => $link, source => $args->{ua}]
     }
-    return;
+
+    #TODO: decide if the 'form' field should be a hashref or an arrayref
+
+    # In case of error, just die. This sub is called inside an eval.
 }
 
-sub makealongerlink {
-    my $tinyurl_url = shift
-        or Carp::croak('No TinyURL key / URL passed to makealongerlink');
-    $_error_message = '';
-    my $ua = __PACKAGE__->ua();
+sub shorterlink_result {
+    my $content = shift;
 
-    $tinyurl_url = "http://tinyurl.com/$tinyurl_url"
-        unless $tinyurl_url =~ m!^http://!i;
+    # HTTP errors have already been handled by the caller.
+    # $content is guaranteed to be not empty.
 
-    my $resp = $ua->get($tinyurl_url);
-
-    unless ($resp->is_redirect) {
-        my $content = $resp->content;
-        if ($content =~ /Error/) {
-            if ($content =~ /<html/) {
-                $_error_message = 'Error is a html page';
-            }
-            elsif (length($content) > 100) {
-                $_error_message = substr($content, 0, 100);
-            }
-            else {
-                $_error_message = $content;
-            }
-        }
-        else {
-            $_error_message = 'Unknown error';
-        }
-
-        return undef;
+    if ($content =~ m!(\Qhttp://tinyurl.com/\E\w+)!x) {
+        return $1;
     }
-    my $url = $resp->header('Location');
-    return $url;
+
+    if ($content =~ /Error/) {
+        die 'Error is a html page' if $content =~ /<html/;
+        die substr($content, 0, 100);
+    }
+
+    die 'Unknown error';
+}
+
+
+sub longerlink_start {
+    my ($link, $args) = @_;
+
+    $link = "http://tinyurl.com/$link"
+        unless $link =~ m!^http://!i;
+
+    return {
+        method => 'GET',
+        url    => $link,
+    };
+}
+
+sub longerlink_result {
+    my $content = shift;
+
+    # This callback is only called in case we were not redirected.
+    # Otherwise, the caller will return the value of the Location
+    # header.
+
+    if ($content =~ /Error/) {
+        die 'Error is a html page' if $content =~ /<html/;
+        die substr($content, 0, 100);
+    }
+
+    die 'Unknown error';
 }
 
 1;
@@ -84,34 +98,30 @@ WWW::Shorten::TinyURL - Perl interface to L<http://tinyurl.com>
   use strict;
   use warnings;
 
-  use WWW::Shorten::TinyURL;
   use WWW::Shorten 'TinyURL';
 
   my $short_url = makeashorterlink('http://www.foo.com/some/long/url');
   my $long_url  = makealongerlink($short_url);
+
+
+  # or using Mojo::URL::Shorten to be non-blocking
+  use Mojo::URL::Shorten;
+
+  my $shortnr = Mojo::URL::Shorten->new(using => 'TinyURL');
+  $shortnr->short_url('http://www.foo.com/some/long/url' => sub {
+    my ($shortnr, $short_url, $error) = @_;
+    $shortnr->long_url($short_url => sub {
+      my ($shortnr, $long_url, $error) = @_;
+    });
+  });
+
 
 =head1 DESCRIPTION
 
 A Perl interface to the web site L<http://tinyurl.com>.  The service simply maintains
 a database of long URLs, each of which has a unique identifier.
 
-=head1 Functions
-
-=head2 makeashorterlink
-
-The function C<makeashorterlink> will call the L<http://TinyURL.com> web site passing
-it your long URL and will return the shorter version.
-
-=head2 makealongerlink
-
-The function C<makealongerlink> does the reverse. C<makealongerlink>
-will accept as an argument either the full URL or just the identifier.
-
-If anything goes wrong, then either function will return C<undef>.
-
-=head2 EXPORT
-
-makeashorterlink, makealongerlink
+DO NOT USE THIS MODULE DIRECTLY.
 
 =head1 SUPPORT, LICENSE, THANKS and SUCH
 
