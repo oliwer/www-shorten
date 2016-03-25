@@ -71,11 +71,8 @@ sub makeashorterlink {
 
     croak "Invalid URL" unless $link and $link =~ /^https?:\/\/\S+/;
 
-    my $args = { @_ };
-    $args->{ua} = $USER_AGENT unless exists $args->{ua};
-
     # Get the instructions to perform the request
-    my $instr = eval { shorterlink_start($link, $args) };
+    my $instr = eval { shorterlink_start($link) };
     croak $@ if $@;
 
     my $resp = $ua->exec($instr);
@@ -93,11 +90,8 @@ sub makeashorterlink {
 sub makealongerlink {
     my $link = shift or croak "Invalid URL";
 
-    my $args = { @_ };
-    $args->{ua} = $USER_AGENT unless exists $args->{ua};
-
     # Get the instructions to perform the request
-    my $instr = eval { longerlink_start($link, $args) };
+    my $instr = eval { longerlink_start($link) };
     croak $@ if $@;
 
     my $resp = $ua->exec($instr);

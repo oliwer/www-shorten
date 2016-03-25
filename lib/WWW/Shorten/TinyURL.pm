@@ -16,12 +16,9 @@ our $PROVIDER = 'tinyurl_com';
 
 
 sub shorterlink_start {
-    my ($link, $args) = @_;
+    my $link = shift;
 
     # $link is guaranteed to be not empty by the caller.
-
-    # $args contains optional user-supplied arguments as
-    # well as the UserAgent signature.
 
     if ($APIKEY) {
         # Use TinyURL Open API
@@ -38,7 +35,7 @@ sub shorterlink_start {
     return {
         method => 'POST',
         url    => 'http://tinyurl.com/api-create.php',
-        form   => [url => $link, source => $args->{ua}]
+        form   => [url => $link, source => __PACKAGE__."/$VERSION"]
     }
 
     #TODO: decide if the 'form' field should be a hashref or an arrayref
@@ -66,7 +63,7 @@ sub shorterlink_result {
 
 
 sub longerlink_start {
-    my ($link, $args) = @_;
+    my $link = shift;
 
     $link = "http://tinyurl.com/$link"
         unless $link =~ m!^http://!i;
