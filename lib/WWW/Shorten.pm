@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Carp 'croak';
-use LWP::UserAgent;
+use WWW::Shorten::UserAgent;
 
 our $VERSION         = '4.00';
 
@@ -59,7 +59,7 @@ sub import {
         = *{"${class}::$name_sets{default}[1]"};
 }
 
-my $ua = LWP::UserAgent->new(
+my $ua = WWW::Shorten::UserAgent->new(
     env_proxy             => 1,
     timeout               => 30,
     agent                 => $USER_AGENT,
@@ -71,8 +71,6 @@ sub makeashorterlink {
 
     croak "Invalid URL" unless $link and $link =~ /^https?:\/\/\S+/;
 
-    $link = url_escape($link);
-
     my $args = { @_ };
     $args->{ua} = $USER_AGENT unless exists $args->{ua};
 
@@ -80,18 +78,7 @@ sub makeashorterlink {
     my $instr = eval { shorterlink_start($link, $args) };
     croak $@ if $@;
 
-    my $resp;
-    if ($instr->{method} eq 'GET') {
-        $resp = $ua->get($instr->{url});
-    }
-    elsif ($instr->{method} eq 'POST') {
-        $resp = $ua->post($instr->{url}, $instr->{form});
-    }
-    else {
-        croak "Invalid HTTP method '$instr->{method}'";
-    }
-
-    croak $resp->status_line if $resp->is_error;
+    my $resp = $ua->exec($instr);
 
     my $content = $resp->content;
     croak "Empty response" unless length $content;
@@ -106,8 +93,6 @@ sub makeashorterlink {
 sub makealongerlink {
     my $link = shift or croak "Invalid URL";
 
-    $link = url_escape($link);
-
     my $args = { @_ };
     $args->{ua} = $USER_AGENT unless exists $args->{ua};
 
@@ -115,18 +100,7 @@ sub makealongerlink {
     my $instr = eval { longerlink_start($link, $args) };
     croak $@ if $@;
 
-    my $resp;
-    if ($instr->{method} eq 'GET') {
-        $resp = $ua->get($instr->{url});
-    }
-    elsif ($instr->{method} eq 'POST') {
-        $resp = $ua->post($instr->{url}, $instr->{form});
-    }
-    else {
-        croak "Invalid HTTP method '$instr->{method}'";
-    }
-
-    croak $resp->status_line if $resp->is_error;
+    my $resp = $ua->exec($instr);
 
     if ($resp->is_redirect) {
         return $resp->header('Location');
@@ -140,13 +114,6 @@ sub makealongerlink {
     croak $@ if $@;
 
     return $long_url;
-}
-
-# From Mojo::Util
-sub url_escape {
-    my $str = shift;
-    $str =~ s/([^A-Za-z0-9\-._~])/sprintf '%%%02X', ord $1/ge;
-    $str;
 }
 
 1;

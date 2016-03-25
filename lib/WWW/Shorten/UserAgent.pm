@@ -26,6 +26,28 @@ sub post {
     return $resp;
 }
 
+#
+# New interface
+#
+# Execute the instructions provided by a plugin
+#
+sub exec {
+    my ($self, $instr) = @_;
+    my $resp;
+
+    if ($instr->{method} eq 'GET') {
+        $resp = $self->get($instr->{url});
+    }
+    elsif ($instr->{method} eq 'POST') {
+        $resp = $self->post($instr->{url}, $instr->{form});
+    }
+    else {
+        die "Invalid HTTP method '$instr->{method}'";
+    }
+
+    return $resp;
+}
+
 1;
 
 =head1 NAME
