@@ -1,6 +1,5 @@
 package WWW::Shorten::TinyURL;
 
-use 5.008;
 use strict;
 use warnings;
 

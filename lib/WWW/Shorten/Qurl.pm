@@ -1,4 +1,4 @@
-package WWW::Shorten::Tinylink;
+package WWW::Shorten::Qurl;
 
 use strict;
 use warnings;
@@ -8,24 +8,24 @@ $VERSION = eval $VERSION;
 
 require WWW::Shorten::_dead;
 
-1;
+0;
 
 =head1 NAME
 
-WWW::Shorten::Tinylink - (DEPRECATED) Shorten URLs
+WWW::Shorten::Qurl - (DEPRECATED) Shorten URLs
 
 =head1 SYNOPSIS
 
-  # No appropriate solution
+  # no viable use case
 
 =head1 DESCRIPTION
 
-Unfortunately, at some point in the middle of 2008, this service stopped
-returning usable URLs and therefore this module is now deprecated
+This module is deprecated since the service no longer functions.  Please
+see L<WWW::Shorten> instead.
 
 =head1 AUTHOR
 
-Iain Truskett C<spoon@cpan.org>
+Dave Cross C<davecross@cpan.org>
 
 =head1 CONTRIBUTORS
 
@@ -34,10 +34,6 @@ Iain Truskett C<spoon@cpan.org>
 =item *
 
 Chase Whitener C<capoeirab@cpan.org>
-
-=item *
-
-Dave Cross C<dave@perlhacks.com>
 
 =back
 
