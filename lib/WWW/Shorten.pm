@@ -73,6 +73,8 @@ sub makeashorterlink {
 
     croak "Invalid URL" unless $link and $link =~ /^https?:\/\/\S+/;
 
+    $link = url_escape($link);
+
     my $args = { @_ };
     $args->{ua} = $USER_AGENT unless exists $args->{ua};
 
@@ -106,6 +108,8 @@ sub makeashorterlink {
 sub makealongerlink {
     my $link = shift or croak "Invalid URL";
 
+    $link = url_escape($link);
+
     my $args = { @_ };
     $args->{ua} = $USER_AGENT unless exists $args->{ua};
 
@@ -138,6 +142,13 @@ sub makealongerlink {
     croak $@ if $@;
 
     return $long_url;
+}
+
+# From Mojo::Util
+sub url_escape {
+    my $str = shift;
+    $str =~ s/([^A-Za-z0-9\-._~])/sprintf '%%%02X', ord $1/ge;
+    $str;
 }
 
 1;
