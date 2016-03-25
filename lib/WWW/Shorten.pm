@@ -7,8 +7,6 @@ use warnings;
 use Carp 'croak';
 use LWP::UserAgent;
 
-our @EXPORT          = qw(makeashorterlink makealongerlink);
-our @EXPORT_OK       = qw(short_link long_link);
 our $VERSION         = '4.00';
 
 our $DEFAULT_SERVICE = 'TinyURL';
