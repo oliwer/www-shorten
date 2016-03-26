@@ -17,10 +17,6 @@ my %name_sets = (
     short   => [qw( short_link long_link )],
 );
 
-# List of subs provided by all WWW::Shorten providers
-my @provided = qw(shorterlink_start shorterlink_result
-                  longerlink_start longerlink_result);
-
 my $provider;
 
 sub import {
@@ -43,16 +39,13 @@ sub import {
         require "$file.pm";
     };
     Carp::croak($@) if $@;
-    # Import its functions
-    no strict 'refs';
-    for my $fun (@provided) {
-        *{"${class}::$fun"} = *{"${provider}::$fun"}
-    }
+    $provider = $provider->new;
 
     # Export the given set of functions
     unless (exists $name_sets{$set}) {
         Carp::croak "Unknown function set '$set'";
     }
+    no strict 'refs';
     *{"${caller}::$name_sets{$set}[0]"}
         = *{"${class}::$name_sets{default}[0]"};
     *{"${caller}::$name_sets{$set}[1]"}
@@ -72,7 +65,7 @@ sub makeashorterlink {
     croak "Invalid URL" unless $link and $link =~ /^https?:\/\/\S+/;
 
     # Get the instructions to perform the request
-    my $instr = eval { shorterlink_start($link) };
+    my $instr = eval { $provider->shorterlink_start($link) };
     croak $@ if $@;
 
     my $resp = $ua->exec($instr);
@@ -81,7 +74,7 @@ sub makeashorterlink {
     croak "Empty response" unless length $content;
 
     # Analyze the response
-    my $short_url = eval { shorterlink_result($content) };
+    my $short_url = eval { $provider->shorterlink_result($content) };
     croak $@ if $@;
 
     return $short_url;
@@ -91,7 +84,7 @@ sub makealongerlink {
     my $link = shift or croak "Invalid URL";
 
     # Get the instructions to perform the request
-    my $instr = eval { longerlink_start($link) };
+    my $instr = eval { $provider->longerlink_start($link) };
     croak $@ if $@;
 
     my $resp = $ua->exec($instr);
@@ -104,7 +97,7 @@ sub makealongerlink {
     croak "Empty response" unless length $content;
 
     # Analyze the response
-    my $long_url = eval { longerlink_result($content) };
+    my $long_url = eval { $provider->longerlink_result($content) };
     croak $@ if $@;
 
     return $long_url;

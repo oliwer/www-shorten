@@ -4,29 +4,54 @@ use strict;
 use warnings;
 use Carp ();
 
-# Old interface compatibility
+our $VERSION  = '4.00';
+
+## Old interface compatibility
 use base qw( WWW::Shorten::generic Exporter );
 our $_error_message = '';
 our @EXPORT         = qw( makeashorterlink makealongerlink );
-
-our $VERSION  = '4.00';
-
-our $APIKEY   = '';
-our $PROVIDER = 'tinyurl_com';
+our $APIKEY         = '';
+##
 
 
+#
+# NEW INTERFACE (object oriented)
+#
+
+#
+# We always need a constructor. In most cases it will be
+# a dummy one. But for TinyURL, we have  attribute: apikey.
+#
+sub new {
+    my $class = shift;
+    my $args = ref $_[0] eq 'HASH' ? shift : { @_ };
+
+    $APIKEY ||= $args->{apikey};
+    $args->{apikey} ||= $APIKEY;
+
+    bless $args, $class;
+}
+
+#
+# This is the first method called bwhen shortening an URL.
+# For a given $link, it returns a hashref containing all
+# the information that the user agent needs to start the
+# the request. We do not care about the result of the
+# HTTP request here.
+#
+# This sub is called in an eval and errors will be
+# catched. $link is guaranteed to be a valid URL.
+#
 sub shorterlink_start {
-    my $link = shift;
+    my ($self, $link) = @_;
 
-    # $link is guaranteed to be not empty by the caller.
-
-    if ($APIKEY) {
+    if ($self->{api_key}) {
         # Use TinyURL Open API
         return {
             method => 'POST',
             url    => 'http://tiny-url.info/api/v1/create',
-            form   => [apikey => $APIKEY, format => 'text',
-                       provider => $PROVIDER, url => $link]
+            form   => [apikey => $self->{apikey}, format => 'text',
+                       provider => 'tinyurl_com', url => $link]
         };
     }
 
@@ -37,17 +62,17 @@ sub shorterlink_start {
         url    => 'http://tinyurl.com/api-create.php',
         form   => [url => $link, source => __PACKAGE__."/$VERSION"]
     }
-
-    #TODO: decide if the 'form' field should be a hashref or an arrayref
-
-    # In case of error, just die. This sub is called inside an eval.
 }
 
+#
+# This sub is called after the user agent has received a
+# response from TinyURL. HTTP errors have already been
+# handled and $content is guaranteed to be not empty.
+#
+# Return value: the short url.
+#
 sub shorterlink_result {
-    my $content = shift;
-
-    # HTTP errors have already been handled by the caller.
-    # $content is guaranteed to be not empty.
+    my ($self, $content) = @_;
 
     if ($content =~ m!(\Qhttp://tinyurl.com/\E\w+)!x) {
         return $1;
@@ -61,9 +86,12 @@ sub shorterlink_result {
     die 'Unknown error';
 }
 
-
+#
+# Identical to shorterlink_start but to get back the
+# original long URL.
+#
 sub longerlink_start {
-    my $link = shift;
+    my ($self, $link) = @_;
 
     $link = "http://tinyurl.com/$link"
         unless $link =~ m!^http://!i;
@@ -74,12 +102,16 @@ sub longerlink_start {
     };
 }
 
+#
+# Identical to shorterlink_result but with a twist!
+# This callback is only called in case we were not redirected.
+# Otherwise, the caller will return the value of the 'Location'
+# header.
+#
+# In the case of TinyURL, it only handles error cases.
+#
 sub longerlink_result {
-    my $content = shift;
-
-    # This callback is only called in case we were not redirected.
-    # Otherwise, the caller will return the value of the Location
-    # header.
+    my ($self, $content) = @_;
 
     if ($content =~ /Error/) {
         die 'Error is a html page' if $content =~ /<html/;
@@ -91,7 +123,7 @@ sub longerlink_result {
 
 
 #
-# Old interface
+# OLD INTERFACE
 #
 
 sub makeashorterlink {
