@@ -35,14 +35,14 @@ sub exec {
     my ($self, $instr) = @_;
     my $resp;
 
-    if ($instr->{method} eq 'GET') {
-        $resp = $self->get($instr->{url});
+    if ($instr->{GET}) {
+        $resp = $self->get($instr->{GET});
     }
-    elsif ($instr->{method} eq 'POST') {
-        $resp = $self->post($instr->{url}, $instr->{form});
+    elsif ($instr->{POST}) {
+        $resp = $self->post($instr->{POST}, $instr->{form});
     }
     else {
-        die "Invalid HTTP method '$instr->{method}'";
+        die "Invalid HTTP request instructions";
     }
 
     return $resp;

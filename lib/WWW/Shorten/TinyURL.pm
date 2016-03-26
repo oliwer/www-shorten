@@ -48,19 +48,17 @@ sub shorterlink_start {
     if ($self->{api_key}) {
         # Use TinyURL Open API
         return {
-            method => 'POST',
-            url    => 'http://tiny-url.info/api/v1/create',
-            form   => [apikey => $self->{apikey}, format => 'text',
-                       provider => 'tinyurl_com', url => $link]
+            POST => 'http://tiny-url.info/api/v1/create',
+            form => [apikey => $self->{apikey}, format => 'text',
+                     provider => 'tinyurl_com', url => $link]
         };
     }
 
     # Use the TinyURL web page: it does not require an API key
     # but is severly rate-limited.
     return {
-        method => 'POST',
-        url    => 'http://tinyurl.com/api-create.php',
-        form   => [url => $link, source => __PACKAGE__."/$VERSION"]
+        POST => 'http://tinyurl.com/api-create.php',
+        form => [url => $link, source => __PACKAGE__."/$VERSION"]
     }
 }
 
@@ -96,10 +94,7 @@ sub longerlink_start {
     $link = "http://tinyurl.com/$link"
         unless $link =~ m!^http://!i;
 
-    return {
-        method => 'GET',
-        url    => $link,
-    };
+    return { GET => $link };
 }
 
 #
