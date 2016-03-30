@@ -39,7 +39,15 @@ sub import {
         require "$file.pm";
     };
     Carp::croak($@) if $@;
-    $provider = $provider->new;
+    if ($provider->can('shorterlink_start')) {
+        # Great! This provider supports the new API
+        $provider = $provider->new;
+    }
+    else {
+        # Old API
+        $provider->import(@_);
+        return;
+    }
 
     # Export the given set of functions
     unless (exists $name_sets{$set}) {
