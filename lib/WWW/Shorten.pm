@@ -8,9 +8,7 @@ use Carp 'croak';
 use WWW::Shorten::UserAgent;
 
 our $VERSION         = '4.00';
-
 our $DEFAULT_SERVICE = 'TinyURL';
-our $USER_AGENT      = __PACKAGE__."/$VERSION";
 
 my %name_sets = (
     default => [qw( makeashorterlink makealongerlink )],
@@ -63,7 +61,7 @@ sub import {
 my $ua = WWW::Shorten::UserAgent->new(
     env_proxy             => 1,
     timeout               => 30,
-    agent                 => $USER_AGENT,
+    agent                 => __PACKAGE__."/$VERSION",
     requests_redirectable => [],
 );
 
